@@ -29,8 +29,13 @@ class neural_network(object):
         weight.append(weight_last)
         self.weights = weight
         self.biases = biases
-    
+        z = []
+        self.z = z
+
     def forward(self):
+        for l in range(self.num_layer-1):
+            zl = self.weights[l] * self.data[l-1] + self.biases[l]
+            # self.data[l] =
         # A faire
         return 0
         
