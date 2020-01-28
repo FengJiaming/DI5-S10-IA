@@ -4,6 +4,7 @@ import torch.optim as optim
 from torch.utils.data import Dataset
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
 
 class model(nn.Module):
     def __init__(self,input_channels,output_channels):
@@ -51,6 +52,7 @@ train_data,test_data,train_labels,test_labels = train_test_split(data,labels,tes
 dataset_iris = iris_dataset(train_data,train_labels)
 dataloader_train = torch.utils.data.DataLoader(dataset_iris,batch_size = 100)
 
+y = []
 for epoch in range(1000):
     i = 0
     loss_epoch = 0
@@ -63,7 +65,12 @@ for epoch in range(1000):
         opt.step()
         i+=1
     print('Mean loss:', loss_epoch/i)
+    y.append(loss_epoch/i)
 
+plt.figure()
+x = range(0,1000)
+plt.plot(x,y)
+plt.show()
 """
 1.Visualizer l'évolution de la loss, tracez la courbe de perte.
 2.Calculer la précision du modèle sur la base d'apprentissage.    
