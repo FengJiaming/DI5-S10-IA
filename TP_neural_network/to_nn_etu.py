@@ -29,8 +29,8 @@ class neural_network(object):
         weight.append(weight_last)
         self.weights = weight
         self.biases = biases
-        z = []
-        self.z = z
+        # Z = []
+        # self.Z = Z
 
     def forward(self):
         self.Z=[]
@@ -48,14 +48,32 @@ class neural_network(object):
             self.A.append(a)
         out = np.dot(self.weights[self.num_layer-1].T,a)
         self.out_softmax = self.softmax(out)
-
-            # self.data[l] =
-        # A faire*
-        return 0
         
     def backward(self):
-        # A faire
-        return 0
+        self.E = []
+        self.dW = []
+        self.db = []
+        e = (self.out_softmax - self.labels)/(self.labels.shape[1])
+        dw = np.dot(self.A[-1],e.T)
+        self.dW.append(dw)
+
+        for i in range(self.num_layer-1):
+            a = self.A[-i-2]
+            z = self.Z[-i-1]
+            e = np.dot(self.weights[-i-1], e)
+            e[z<=0] = 0
+            dw = np.dot(a,e.T)
+            if self.is_bias:
+                db = np.sum(e, axis=1, keepdims=True)
+                self.db.append(db)
+            self.dW.append(dw)
+
+        for i in range(self.num_layer):
+            self.weights[i] += -self.lr * self.dW[-i-1]
+
+        if self.is_bias:
+            for i in range(self.num_layer-1):
+                self.biases[i] += -self.lr * self.db[-i-1]
         
     def learning(self):
         for epoch in range(self.num_epoch):
@@ -63,8 +81,7 @@ class neural_network(object):
             self.loss = self.cost(self.labels,self.out_softmax)
             print(self.loss)
             self.backward()
-    
-    def relu(self, ):
+
     # Softmax score    
     def softmax(self,V):
         e_V = np.exp(V - np.max(V, axis = 0, keepdims = True))
