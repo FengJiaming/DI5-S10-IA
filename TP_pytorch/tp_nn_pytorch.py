@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn #Les réseaux de neurones peuvent être construits avec le paquet torch.nn.
 import torch.optim as optim # Un package contenant de nombreux algorithmes d'optimisation
-from torch.utils.data import Dataset
+from sklearn.metrics import accuracy_score, precision_score
+from torch.utils.data import Dataset # Présentation de l'ensemble de données
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
@@ -17,22 +18,22 @@ class model(nn.Module):  #Définir un réseau neuronal avec des paramètres entr
         self.out_layer = nn.Linear(8,self.output_channels,bias=False) # out_layer:  8 input channels, output_channels  .  bias:  non bias
         self.relu = nn.ReLU()
         
-    def forward(self, x):  #forward (entrée) : Il renvoie la sortie(output).
-        x = self.relu(self.layer_1(x)) #en utilisant fonction d'avtivitation
+    def forward(self, x): # # propagation en avant
+        x = self.relu(self.layer_1(x))
         x = self.relu(self.layer_2(x))
-        x = nn.functional.softmax(self.out_layer(x))  #couche d'activation
+        x = nn.functional.softmax(self.out_layer(x)) # softmax
         return x
     
-class iris_dataset(Dataset): #sous-classes de torch.utils.data.Dataset, pour lire les données
+class iris_dataset(Dataset):
     def __init__(self,data,target):
         super(iris_dataset,self).__init__()
         self.data = data
         self.labels = target
     
-    def __len__(self): # override?
+    def __len__(self):
         return len(self.labels)
         
-    def __getitem__(self, idx):  # Construire les tenseur de data et label
+    def __getitem__(self, idx):
         data = self.data[idx,:]
         data = (torch.tensor(data,dtype=torch.float)).unsqueeze(0)
         label = self.labels[idx]
@@ -40,17 +41,12 @@ class iris_dataset(Dataset): #sous-classes de torch.utils.data.Dataset, pour lir
         return data,label
         
     
-neural_network = model(30,2) # création du modèle avec 30 input_channels et 2 output_channels
+neural_network = model(30,2) # Créer un modèle
+opt = optim.SGD(params = neural_network.parameters(), lr = 0.1,momentum = 0.9, nesterov=True)
+criterion = torch.nn.CrossEntropyLoss()
 
-# nn.Parameter : Une sorte de tenseur, qui est automatiquement enregistré en tant que paramètre lorsqu'il est attribué en tant qu'attribut à un module
-# lr: learning rate = 0.1, ici c'est le pas du gradient descent.
-#  x+=v,  v=−dx∗lr+v∗momemtum
-#  nesterov:  d(x + mu * v)
-opt = optim.SGD(params = neural_network.parameters(), lr = 0.1,momentum = 0.9, nesterov=True) #Créez un optim et spécifiez les paramètres correspondants
-criterion = torch.nn.CrossEntropyLoss() # Fonction de perte(loss fonction), intégration de nn.logSoftmax () et nn.NLLLoss ()
-#utiliser sklearn - datasets
-dataset_iris = datasets.load_breast_cancer()  # Extraire des données, breast_cancer!!!
-labels = dataset_iris.target # 0, 1 ['malignant' 'benign']
+dataset_iris = datasets.load_breast_cancer() 
+labels = dataset_iris.target
 data = dataset_iris.data
 data = (data-data.min())/(data.max()-data.min())
 train_data,test_data,train_labels,test_labels = train_test_split(data,labels,test_size=0.2)
@@ -60,26 +56,42 @@ dataset_iris = iris_dataset(train_data,train_labels)#torch dataset lire les donn
 dataloader_train = torch.utils.data.DataLoader(dataset_iris,batch_size = 100)#DataLoader: Un type de données qui détermine comment les données sont entrées dans le réseau
 
 
-y = []
+mean_loss = []
+accuracy = []
+precision = []
+
 for epoch in range(1000):
     i = 0
     loss_epoch = 0
+    preds = []
     for data,label in dataloader_train:
         neural_network.zero_grad() #Initialiser le gradient de paramètre du modèle à 0
         output = neural_network(data) #Obtenir la sortie
         loss = criterion(output.squeeze(1),label) # calculer la perte entre vrais donnees et prédiction donnees
         loss_epoch = loss_epoch+loss.data.tolist() # sum de tous les perte
+        neural_network.zero_grad()
+        _, pred = torch.max(output.squeeze(1), dim=1)
+        preds.append(pred)
         loss.backward() # Gradient de rétropropagation
         opt.step() # Mettre à jour les paramètres
         i+=1
-    print('Mean loss:', loss_epoch/i)  #Perte moyenne
-    y.append(loss_epoch/i)
+    preds_tensor = preds[0]
+    for j in range(len(preds)-1):
+        preds_tensor = torch.cat((preds_tensor,preds[j+1]),0)
+    print('Accuracy score: ', accuracy_score(preds_tensor, train_labels))
+    print('Precision score: ', precision_score(preds_tensor, train_labels))
+    print('Mean loss:', loss_epoch/i)
+    accuracy.append(accuracy_score(preds_tensor, train_labels))
+    precision.append(precision_score(preds_tensor, train_labels))
+    mean_loss.append(loss_epoch/i)
 
 plt.figure()
 x = range(0,1000)
-plt.plot(x,y)
+plt.plot(x,mean_loss, label='mean loss')
+plt.plot(x, accuracy, 'r', label='accuracy')
+plt.plot(x, precision, 'b', label='precision')
+plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=0, ncol=3, mode="expand", borderaxespad=0.)
 plt.show()
-
 """
 1.Visualizer l'évolution de la loss, tracez la courbe de perte.
 2.Calculer la précision du modèle sur la base d'apprentissage.    
