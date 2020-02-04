@@ -49,12 +49,21 @@ dataset_iris = datasets.load_breast_cancer()
 labels = dataset_iris.target
 data = dataset_iris.data
 data = (data-data.min())/(data.max()-data.min())
-train_data,test_data,train_labels,test_labels = train_test_split(data,labels,test_size=0.2)
+
+train_data,test_data,train_labels,test_labels = train_test_split(data,labels,test_size=0.2) #train+validation:test=0.6+0.2:0.2
 
 dataset_iris = iris_dataset(train_data,train_labels)#torch dataset lire les données
-#batch_size: Combien d'échantillons sont chargés dans chaque lot (par défaut: 1).
-dataloader_train = torch.utils.data.DataLoader(dataset_iris,batch_size = 100)#DataLoader: Un type de données qui détermine comment les données sont entrées dans le réseau
 
+train_data, val_data, train_labels, val_labels = train_test_split(dataset_iris.data, dataset_iris.labels,
+                                                                  test_size=0.25)# train:validation=0.6:0.2
+dataset_test = iris_dataset(test_data, test_labels)  # dataset pour test
+dataset_train = iris_dataset(train_data,train_labels) # dataset pour train
+dataset_val = iris_dataset(val_data, val_labels)#dataset pour valitaion
+
+#batch_size: Combien d'échantillons sont chargés dans chaque lot (par défaut: 1).
+dataloader_train = torch.utils.data.DataLoader(dataset_train,batch_size = 100)#DataLoader: Un type de données qui détermine comment les données sont entrées dans le réseau
+dataloader_val = torch.utils.data.DataLoader(dataset_val, batch_size=100)
+dataloader_test = torch.utils.data.DataLoader(dataset_test,batch_size=100)
 
 mean_loss = []
 accuracy = []
@@ -69,22 +78,27 @@ for epoch in range(1000):
         output = neural_network(data) #Obtenir la sortie
         loss = criterion(output.squeeze(1),label) # calculer la perte entre vrais donnees et prédiction donnees
         loss_epoch = loss_epoch+loss.data.tolist() # sum de tous les perte
-        neural_network.zero_grad()
-        _, pred = torch.max(output.squeeze(1), dim=1)
-        preds.append(pred)
         loss.backward() # Gradient de rétropropagation
         opt.step() # Mettre à jour les paramètres
         i+=1
+
+    for data, label in dataloader_val:
+        output = neural_network(data)
+        _, pred = torch.max(output.squeeze(1), dim=1)
+        preds.append(pred)
+
     preds_tensor = preds[0]
     for j in range(len(preds)-1):
         preds_tensor = torch.cat((preds_tensor,preds[j+1]),0)
-    print('Accuracy score: ', accuracy_score(preds_tensor, train_labels))
-    print('Precision score: ', precision_score(preds_tensor, train_labels))
-    print('Mean loss:', loss_epoch/i)
-    accuracy.append(accuracy_score(preds_tensor, train_labels))
-    precision.append(precision_score(preds_tensor, train_labels))
-    mean_loss.append(loss_epoch/i)
 
+
+    print('Accuracy score: ', accuracy_score(preds_tensor, val_labels))
+    print('Precision score: ', precision_score(preds_tensor, val_labels))
+    print('Mean loss:', loss_epoch/i)
+    accuracy.append(accuracy_score(preds_tensor, val_labels))
+    precision.append(precision_score(preds_tensor, val_labels))
+    mean_loss.append(loss_epoch/i)
+#Visualizer
 plt.figure()
 x = range(0,1000)
 plt.plot(x,mean_loss, label='mean loss')
@@ -92,6 +106,22 @@ plt.plot(x, accuracy, 'r', label='accuracy')
 plt.plot(x, precision, 'b', label='precision')
 plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=0, ncol=3, mode="expand", borderaxespad=0.)
 plt.show()
+
+preds = []
+for data, label in dataloader_test: #Test de modele avec de nouvelles données(dataset_test)
+    output = neural_network(data)
+    _, pred= torch.max(output.squeeze(1), dim=1)
+    preds.append(pred)
+preds_tensor = preds[0]
+j=0
+for j in range(len(preds)-1):
+    preds_tensor = torch.cat((preds_tensor,preds[j+1]),0)
+
+print('Accuracy test score: ', accuracy_score(preds_tensor, test_labels))
+print('Precision test score: ', precision_score(preds_tensor, test_labels))
+
+
+
 """
 1.Visualizer l'évolution de la loss, tracez la courbe de perte.
 2.Calculer la précision du modèle sur la base d'apprentissage.    
