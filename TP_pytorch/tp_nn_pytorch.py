@@ -68,6 +68,7 @@ dataloader_test = torch.utils.data.DataLoader(dataset_test,batch_size=100)
 mean_loss = []
 accuracy = []
 precision = []
+accuracy_best = 0.0
 
 for epoch in range(1000):
     i = 0
@@ -91,6 +92,9 @@ for epoch in range(1000):
     for j in range(len(preds)-1):
         preds_tensor = torch.cat((preds_tensor,preds[j+1]),0)
 
+    if accuracy_best<accuracy_score(preds_tensor, val_labels):
+        accuracy_best=accuracy_score(preds_tensor, val_labels)
+        best_epoch=epoch
 
     print('Accuracy score: ', accuracy_score(preds_tensor, val_labels))
     print('Precision score: ', precision_score(preds_tensor, val_labels))
@@ -98,6 +102,7 @@ for epoch in range(1000):
     accuracy.append(accuracy_score(preds_tensor, val_labels))
     precision.append(precision_score(preds_tensor, val_labels))
     mean_loss.append(loss_epoch/i)
+
 #Visualizer
 plt.figure()
 x = range(0,1000)
@@ -119,6 +124,9 @@ for j in range(len(preds)-1):
 
 print('Accuracy test score: ', accuracy_score(preds_tensor, test_labels))
 print('Precision test score: ', precision_score(preds_tensor, test_labels))
+
+print('Best accuracy: ', accuracy_best)
+print('Best epoch: ', best_epoch)
 
 
 
