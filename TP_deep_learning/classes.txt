@@ -1,0 +1,20 @@
+000:goldfish, Carassius auratus
+001:European fire salamander, Salamandra salamandra
+002:bullfrog, Rana catesbeiana
+003:tailed frog, bell toad, ribbed toad, tailed toad, Ascaphus trui
+004:American alligator, Alligator mississipiensis
+005:boa constrictor, Constrictor constrictor
+006:trilobite
+007:scorpion
+008:black widow, Latrodectus mactans
+009:tarantula
+010:centipede
+011:goose
+012:koala, koala bear, kangaroo bear, native bear, Phascolarctos cinereus
+013:jellyfish
+014:brain coral
+015:snail
+016:slug
+017:sea slug, nudibranch
+018:American lobster, Northern lobster, Maine lobster, Homarus americanus
+019:spiny lobster, langouste, rock lobster, crawfish, crayfish, sea crawfish
