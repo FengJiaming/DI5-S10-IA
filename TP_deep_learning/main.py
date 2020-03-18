@@ -103,6 +103,7 @@ for epoch in range(2):
         lossValidatoin += loss.item() 
     lossEpoch.append(lossValidatoin / 1000) 
     print('Validation Epoch %d .loss: %.3f' % (epoch, lossEpoch[epoch]))
+    torch.save(net.state_dict(), PATH)
     if lossEpoch[epoch] <lossEpoch[epoch-1]:   
         torch.save(net.state_dict(), PATH)
 
